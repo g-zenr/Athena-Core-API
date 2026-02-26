@@ -1,3 +1,5 @@
+import utils.transport
+import utils.session
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -40,12 +42,12 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Document Q&A AI Assistant",
+    title="Athena Core API",
     description=(
         "On-premise RAG-based AI that answers questions from your uploaded documents. "
         "Works for any domain: education, law, research, corporate, medical, and more."
     ),
-    version="2.0.0",
+    version="1.0.0",
     lifespan=lifespan,
 )
 
@@ -67,4 +69,4 @@ app.include_router(health.router, prefix="/api")
 
 @app.get("/")
 def root():
-    return {"message": "Document Q&A AI Assistant", "docs": "/docs"}
+    return {"message": "Athena Core API", "docs": "/docs"}

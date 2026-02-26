@@ -1,8 +1,14 @@
-# Document Q&A AI Assistant
+# Athena Core API
 
 > On-premise, domain-agnostic RAG system. Upload any PDF or TXT — ask questions, get cited answers. No cloud APIs. Everything runs locally.
 
 Works for **any domain**: education, law, medicine, research, corporate manuals, government documents, and more.
+
+[![Python](https://img.shields.io/badge/Python-3.11+-blue)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-latest-green)](https://fastapi.tiangolo.com)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%2F17%2F18-blue)](https://postgresql.org)
+[![pgvector](https://img.shields.io/badge/pgvector-HNSW-orange)](https://github.com/pgvector/pgvector)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
 ---
 
@@ -27,11 +33,11 @@ Works for **any domain**: education, law, medicine, research, corporate manuals,
 |---|---|
 | **Domain-agnostic** | Works with legal codes, textbooks, research papers, corporate manuals, anything |
 | **On-premise** | All inference is local — no data leaves your machine |
-| **Smart chunking** | Auto-detects document structure (Chapters, Sections, Lessons, Clauses, Articles, etc.) |
+| **Smart chunking** | Auto-detects document structure: Chapters, Sections, Lessons, Units, Clauses, Articles, and more |
 | **Streaming** | Server-Sent Events endpoint for real-time token-by-token output |
 | **Cited answers** | Every response links back to the source document and section |
-| **Fast retrieval** | pgvector HNSW index — approximate nearest-neighbour search in PostgreSQL |
-| **Strict RAG** | LLM is constrained to answer only from retrieved context |
+| **Fast retrieval** | pgvector HNSW index — approximate nearest-neighbour search directly in PostgreSQL |
+| **Strict RAG** | LLM is constrained to answer only from retrieved context — no hallucination |
 
 ---
 
@@ -52,7 +58,7 @@ Works for **any domain**: education, law, medicine, research, corporate manuals,
                                          ▼
                          ┌──────────────────────────────────┐
                          │  PostgreSQL + pgvector (HNSW)     │
-                         │  documents table + chunks table   │
+                         │  documents + chunks tables        │
                          └──────────────┬───────────────────┘
                                         │
   ASK                                   │
@@ -76,10 +82,10 @@ Works for **any domain**: education, law, medicine, research, corporate manuals,
 
 ### Chunking Strategy
 
-The processor tries structural chunking first, then falls back to fixed-size:
+Athena tries structural chunking first, then falls back to fixed-size:
 
 1. **Structural** — splits at detected headings: `Article`, `Section`, `Chapter`, `Lesson`, `Unit`, `Module`, `Clause`, `Provision`, `Part`, `Appendix`, numbered outlines (`1.1 Heading`), and more
-2. **Fixed-size** — 800-character windows with 150-character overlap (fallback)
+2. **Fixed-size** — 800-character windows with 150-character overlap (fallback for unstructured documents)
 
 ---
 
@@ -91,7 +97,7 @@ The processor tries structural chunking first, then falls back to fixed-size:
 | Database | [PostgreSQL](https://www.postgresql.org/) 16/17/18 + [pgvector](https://github.com/pgvector/pgvector) |
 | ORM / validation | [SQLAlchemy](https://www.sqlalchemy.org/) 2 + [Pydantic](https://docs.pydantic.dev/) v2 |
 | Embeddings | [SentenceTransformers](https://www.sbert.net/) (`all-MiniLM-L6-v2`, 384-dim) |
-| LLM | [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) (GGUF format) |
+| LLM inference | [llama-cpp-python](https://github.com/abetlen/llama-cpp-python) (GGUF format) |
 | PDF extraction | [pdfplumber](https://github.com/jsvine/pdfplumber) |
 | Authentication | API key (`X-API-Key` header) |
 | Tests | [pytest](https://pytest.org/) + [pytest-asyncio](https://pytest-asyncio.readthedocs.io/) |
@@ -113,8 +119,8 @@ The processor tries structural chunking first, then falls back to fixed-size:
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/<your-username>/docqa-ai.git
-cd docqa-ai
+git clone https://github.com/g-zenr/Athena-Core-API.git
+cd Athena-Core-API
 ```
 
 ### 2. Create and activate a virtual environment
@@ -153,25 +159,25 @@ Any GGUF model works — update `MODEL_PATH` in `.env` accordingly.
 cp .env.example .env
 ```
 
-Open `.env` and set at minimum:
+Edit `.env` and set at minimum:
 
 ```ini
 API_KEY=your-secret-key-here
-DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/docqa_ai
+DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/athena_core
 MODEL_PATH=models/qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf
 ```
 
 ### 6. Create the database and run migrations
 
 ```bash
-# Create the database in psql first:
-psql -U postgres -c "CREATE DATABASE docqa_ai;"
+# Create the database first (in psql):
+psql -U postgres -c "CREATE DATABASE athena_core;"
 
 # Then run the migration script:
 python migrate.py
 ```
 
-This creates the `documents` and `chunks` tables and builds the HNSW index.
+This creates the `documents` and `chunks` tables and builds the HNSW index on the embedding column.
 
 ### 7. Start the server
 
@@ -179,38 +185,45 @@ This creates the `documents` and `chunks` tables and builds the HNSW index.
 python run.py
 ```
 
-The API is now live at **http://localhost:8000**
-Interactive docs: **http://localhost:8000/docs**
+| | URL |
+|---|---|
+| API | http://localhost:8001 |
+| Interactive docs | http://localhost:8001/docs |
+| OpenAPI JSON | http://localhost:8001/openapi.json |
 
 ---
 
 ## Configuration
 
-All configuration is via environment variables (`.env` file).
+All settings are loaded from the `.env` file.
 
 | Variable | Default | Description |
 |---|---|---|
-| `API_KEY` | *(required)* | Secret key for `X-API-Key` header authentication |
-| `DATABASE_URL` | `postgresql://postgres:password@localhost:5432/docqa_ai` | PostgreSQL connection string |
-| `MODEL_PATH` | `models/qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf` | Path to your GGUF model file |
+| `API_KEY` | *(required)* | Secret key for `X-API-Key` header |
+| `DATABASE_URL` | `postgresql://postgres:password@localhost:5432/athena_core` | PostgreSQL connection string |
+| `MODEL_PATH` | `models/qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf` | Path to your GGUF model |
 | `MODEL_N_CTX` | `2048` | LLM context window size (tokens) |
-| `MODEL_N_GPU_LAYERS` | `0` | GPU layers to offload (`0` = CPU only) |
-| `MODEL_N_THREADS` | `0` | CPU threads (`0` = auto-detect) |
+| `MODEL_N_GPU_LAYERS` | `0` | GPU layers to offload (`-1` = all, `0` = CPU only) |
+| `MODEL_N_THREADS` | `0` | CPU threads (`0` = auto) |
 | `MODEL_MAX_TOKENS` | `512` | Max tokens to generate per response |
-| `MODEL_TEMPERATURE` | `0.1` | Sampling temperature (lower = more deterministic) |
+| `MODEL_TEMPERATURE` | `0.1` | Sampling temperature |
 | `EMBEDDING_MODEL` | `all-MiniLM-L6-v2` | SentenceTransformers model name |
-| `UPLOAD_DIR` | `uploads` | Directory where uploaded files are saved |
-| `DATA_DIR` | `data` | Directory for runtime data |
-| `HOST` | `0.0.0.0` | Server bind address |
-| `PORT` | `8000` | Server port |
+| `UPLOAD_DIR` | `uploads` | Directory for uploaded files |
+| `DATA_DIR` | `data` | Runtime data directory |
+| `HOST` | `0.0.0.0` | Bind address |
+| `PORT` | `8001` | Server port |
 
-> **GPU acceleration**: Set `MODEL_N_GPU_LAYERS=-1` to offload all layers to GPU (requires a CUDA build of llama-cpp-python).
+> **GPU acceleration**: Set `MODEL_N_GPU_LAYERS=-1` to offload all layers to GPU. Requires a CUDA build of llama-cpp-python.
+
+> **Port note (Windows)**: Port 8000 is commonly reserved by Hyper-V/WSL2 on Windows 11. Athena uses `8001` by default to avoid this.
 
 ---
 
 ## API Reference
 
 All endpoints except `GET /api/health` require the `X-API-Key` header.
+
+---
 
 ### Upload a document
 
@@ -219,7 +232,7 @@ POST /api/upload-document
 X-API-Key: <your-key>
 Content-Type: multipart/form-data
 
-file    : <PDF or TXT file>
+file    : <PDF or TXT file, max 50 MB>
 title   : "Introduction to Python Programming"
 year    : 2023
 ```
@@ -236,6 +249,8 @@ year    : 2023
   }
 }
 ```
+
+`strategy` is either `"sections"` (structural) or `"fixed_size"` (fallback).
 
 ---
 
@@ -255,7 +270,7 @@ X-API-Key: <your-key>
       "title": "Introduction to Python Programming",
       "year": 2023,
       "section_count": 42,
-      "created_at": "2024-01-15T10:30:00"
+      "created_at": "2025-02-26T10:30:00"
     }
   ]
 }
@@ -270,7 +285,7 @@ DELETE /api/document/{id}
 X-API-Key: <your-key>
 ```
 
-**Response `204 No Content`** — document and all its chunks are removed.
+**Response `204 No Content`** — document and all its chunks are removed (FK cascade).
 
 ---
 
@@ -293,16 +308,19 @@ Content-Type: application/json
   "data": {
     "answer": "Chapter 3 covers functions and variable scope...",
     "citations": [
-      { "document": "Introduction to Python Programming", "section": "Chapter 3" }
+      {
+        "document": "Introduction to Python Programming",
+        "section": "Chapter 3"
+      }
     ]
   }
 }
 ```
 
-| Field | Description |
-|---|---|
-| `question` | Your question (5–2000 characters) |
-| `top_k` | Number of context chunks to retrieve (1–20, default `3`) |
+| Field | Type | Description |
+|---|---|---|
+| `question` | string | Your question (5–2000 characters) |
+| `top_k` | int | Context chunks to retrieve (1–20, default `3`) |
 
 ---
 
@@ -358,38 +376,38 @@ No authentication required.
 # Run all tests
 pytest
 
-# With verbose output
+# Verbose output
 pytest -v
 
-# Run a specific file
+# Specific file
 pytest tests/test_ask.py -v
 ```
 
-All external dependencies (PostgreSQL, LLM, embedder) are mocked — tests run without any real database or model.
+All external dependencies (PostgreSQL, LLM, embedder) are mocked — tests run instantly without any real database or model file.
 
 ---
 
 ## Windows: Installing pgvector
 
-pgvector is not bundled with the standard PostgreSQL Windows installer. Two options:
+pgvector is not included with the standard PostgreSQL Windows installer.
 
-### Option A — Download pre-built binaries (recommended)
+### Option A — Pre-built binaries (recommended)
 
 1. Go to [pgvector releases](https://github.com/pgvector/pgvector/releases)
-2. Download the `.zip` for your PostgreSQL version (e.g., `pgvector-v0.8.0-pg18-windows-x86_64.zip`)
-3. Extract to `pgvector_temp/` in the project root so the layout is:
+2. Download the `.zip` matching your PostgreSQL version (e.g. `pgvector-v0.8.0-pg18-windows-x86_64.zip`)
+3. Extract into `pgvector_temp/` so the layout is:
    ```
    pgvector_temp/
      lib/vector.dll
      share/extension/vector.control
      share/extension/vector--*.sql
    ```
-4. Run the installer script as Administrator:
+4. Run the installer as Administrator:
    ```powershell
-   # Default: PostgreSQL 18
+   # PostgreSQL 18 (default)
    .\install_pgvector.ps1
 
-   # Or specify your version:
+   # Or specify your version
    .\install_pgvector.ps1 -PG_VERSION 17
    ```
 5. Restart the PostgreSQL service
@@ -397,17 +415,17 @@ pgvector is not bundled with the standard PostgreSQL Windows installer. Two opti
 
 ### Option B — Build from source
 
-Follow the [official build guide](https://github.com/pgvector/pgvector#installation) for Windows.
+Follow the [official Windows build guide](https://github.com/pgvector/pgvector#windows).
 
 ---
 
 ## Project Structure
 
 ```
-docqa-ai/
+Athena-Core-API/
 ├── app/
 │   ├── main.py                  # FastAPI app, lifespan, router registration
-│   ├── config.py                # Pydantic Settings (reads from .env)
+│   ├── config.py                # Pydantic Settings (reads .env)
 │   ├── database.py              # SQLAlchemy engine, get_db() context manager
 │   │
 │   ├── models/
@@ -415,12 +433,12 @@ docqa-ai/
 │   │   └── chunk.py             # Chunk ORM model     (chunks table + pgvector)
 │   │
 │   ├── routes/
-│   │   ├── ask.py               # POST /api/ask, POST /api/ask/stream
-│   │   ├── upload.py            # POST /api/upload-document, GET /api/documents, DELETE /api/document/{id}
+│   │   ├── ask.py               # POST /api/ask  |  POST /api/ask/stream
+│   │   ├── upload.py            # POST /api/upload-document  |  GET /api/documents  |  DELETE /api/document/{id}
 │   │   └── health.py            # GET /api/health
 │   │
 │   ├── services/
-│   │   └── document_processor.py  # Text extraction + structural/fixed-size chunking
+│   │   └── document_processor.py  # Text extraction + structural / fixed-size chunking
 │   │
 │   ├── storage/
 │   │   ├── metadata_store.py    # CRUD for documents table
@@ -429,21 +447,21 @@ docqa-ai/
 │   ├── rag/
 │   │   ├── embedder.py          # SentenceTransformers singleton (lazy-load)
 │   │   ├── retriever.py         # pgvector HNSW cosine search + embedding writer
-│   │   └── prompt_builder.py    # Strict RAG prompt construction + citation extraction
+│   │   └── prompt_builder.py    # Strict RAG prompt + citation extraction
 │   │
 │   ├── llm/
 │   │   └── model.py             # llama-cpp-python singleton (lazy-load, streaming)
 │   │
 │   └── dependencies/
-│       └── api_key.py           # X-API-Key header validation dependency
+│       └── api_key.py           # X-API-Key validation dependency
 │
 ├── tests/
 │   ├── conftest.py              # Pytest fixtures (all deps mocked)
 │   ├── test_ask.py              # /api/ask + /api/ask/stream tests
 │   └── test_upload.py           # Upload, list, delete, health tests
 │
-├── models/                      # GGUF model files (gitignored)
-├── uploads/                     # Uploaded document files (gitignored)
+├── models/                      # GGUF model files go here (gitignored)
+├── uploads/                     # Uploaded documents (gitignored)
 ├── data/                        # Runtime data directory (gitignored)
 │
 ├── migrate.py                   # One-time DB setup: tables + HNSW index
@@ -458,7 +476,7 @@ docqa-ai/
 ## Contributing
 
 1. Fork the repo and create a feature branch
-2. Follow the existing patterns — read `app/` before adding anything new
+2. Follow existing patterns — read the relevant `app/` module before adding anything
 3. Add or update tests for any changed behaviour
 4. Run `pytest` — all tests must pass
 5. Open a pull request with a clear description

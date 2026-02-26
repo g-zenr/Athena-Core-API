@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
 
     # Database
-    DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/docqa_ai"
+    DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/athena_core"
 
     # Storage
     DATA_DIR: str = "data"
@@ -25,7 +25,7 @@ class Settings(BaseSettings):
 
     # Server
     HOST: str = "0.0.0.0"
-    PORT: int = 8000
+    PORT: int = 8001
 
     model_config = SettingsConfigDict(env_file=".env")
 

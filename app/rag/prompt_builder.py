@@ -1,5 +1,5 @@
 """
-RAG prompt construction for the Document Q&A Assistant.
+RAG prompt construction for Athena Core API.
 Builds a strict instruction prompt that forces the LLM to answer
 ONLY from retrieved context, never from its training data.
 Works for any domain: education, law, medicine, corporate, research, etc.

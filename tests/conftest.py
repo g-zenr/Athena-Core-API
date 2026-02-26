@@ -1,5 +1,5 @@
 """
-Pytest fixtures for the Document Q&A AI Assistant.
+Pytest fixtures for Athena Core API.
 Mocks the LLM, embedder, pgvector retriever, and storage so tests
 never touch the real model files or the PostgreSQL database.
 """

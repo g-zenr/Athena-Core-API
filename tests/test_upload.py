@@ -145,4 +145,4 @@ def test_delete_document_requires_api_key(client):
 def test_root_endpoint(client):
     response = client.get("/")
     assert response.status_code == 200
-    assert "Document Q&A" in response.json()["message"]
+    assert "Athena" in response.json()["message"]
