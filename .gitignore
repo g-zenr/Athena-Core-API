@@ -1,0 +1,75 @@
+# ── Secrets & environment ────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.Python
+
+# ── Virtual environment ───────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ── Test / coverage ───────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+
+# ── Build / packaging ─────────────────────────────────────────────────────────
+dist/
+build/
+*.egg-info/
+*.egg
+MANIFEST
+
+# ── LLM model files (large binaries) ─────────────────────────────────────────
+# Place your GGUF model inside models/ — the directory is tracked but files are not.
+models/*.gguf
+models/*.bin
+models/*.safetensors
+
+# ── Runtime data directories ──────────────────────────────────────────────────
+# Directories are tracked via .gitkeep; their contents are not.
+uploads/*
+!uploads/.gitkeep
+
+data/*
+!data/.gitkeep
+
+# Legacy JSON / FAISS artefacts from pre-pgvector versions
+*.faiss
+*.index
+chunks.json
+metadata.json
+
+# ── pgvector Windows installer binaries ───────────────────────────────────────
+# Download from https://github.com/pgvector/pgvector/releases (see README)
+pgvector_temp/lib/
+pgvector_temp/include/
+pgvector_temp/share/
+
+# ── Editor / OS ───────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Claude Code internal config ───────────────────────────────────────────────
+.claude/
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
